@@ -614,6 +614,8 @@ ip4_input(struct pbuf *p, struct netif *inp)
     }
   }
 
+  netif = inp;
+
   /* packet not for us? */
   if (netif == NULL) {
     /* packet not for us, route or discard */
