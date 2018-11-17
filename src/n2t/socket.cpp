@@ -43,8 +43,9 @@ namespace Net2Tr {
                 if (packet.size() == 0)
                     internal->end = true;
                 if (internal->recv) {
-                    internal->recv(packet);
+                    RecvHandler tmp = internal->recv;
                     internal->recv = RecvHandler();
+                    tmp(packet);
                 } else {
                     internal->recv_buf += packet;
                 }
@@ -55,16 +56,20 @@ namespace Net2Tr {
         {
             SocketInternal *internal = (SocketInternal *) arg;
             internal->pending_len -= len;
-            if (len == 0)
-                internal->sent();
+            if (internal->pending_len == 0) {
+                SentHandler tmp = internal->sent;
+                internal->sent = SentHandler();
+                tmp();
+            }
             return ERR_OK;
         });
         tcp_err(internal->pcb, [](void *arg, err_t err)
         {
             SocketInternal *internal = (SocketInternal *) arg;
             if (internal->err) {
-                internal->err(err);
+                ErrHandler tmp = internal->err;
                 internal->err = ErrHandler();
+                tmp(err);
             } else {
                 internal->err_que.push(err);
             }
@@ -97,5 +102,12 @@ namespace Net2Tr {
             internal->err_que.pop();
             handler(err);
         }
+    }
+
+    void Socket::cancel()
+    {
+        internal->recv = RecvHandler();
+        internal->sent = SentHandler();
+        internal->err = ErrHandler();
     }
 }

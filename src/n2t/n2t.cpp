@@ -37,8 +37,9 @@ namespace Net2Tr {
             N2TInternal *internal = (N2TInternal *) (ni->state);
             string packet = Utils::pbuf_to_str(p);
             if (internal->output) {
-                internal->output(packet);
+                OutputHandler tmp = internal->output;
                 internal->output = OutputHandler();
+                tmp(packet);
             } else {
                 internal->output_que.push(packet);
             }
@@ -80,8 +81,9 @@ namespace Net2Tr {
                 N2TInternal *internal = (N2TInternal *) arg;
                 if (internal->new_connection) {
                     internal->pending_socket->set_pcb(newpcb);
-                    internal->new_connection(internal->pending_socket);
+                    NewConnectionHandler tmp = internal->new_connection;
                     internal->new_connection = NewConnectionHandler();
+                    tmp(internal->pending_socket);
                 } else {
                     internal->connection_que.push(newpcb);
                 }
@@ -128,6 +130,12 @@ namespace Net2Tr {
             s->set_pcb(pcb);
             handler(s);
         }
+    }
+
+    void N2T::cancel()
+    {
+        internal->output = OutputHandler();
+        internal->new_connection = NewConnectionHandler();
     }
 
     void N2T::process_events()
