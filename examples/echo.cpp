@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>
 #include <string>
 #include <unistd.h>
 #include <fcntl.h>
@@ -36,7 +37,18 @@ int main()
     });
     n2t.set_new_connection_handler([](Socket &s)
     {
-        delete &s;
+        s.set_recv_handler([&s](const string &packet)
+        {
+            if (packet.size() == 0) {
+                delete &s;
+                return;
+            }
+            s.send(packet);
+        });
+        s.set_err_handler([&s](int8_t)
+        {
+            delete &s;
+        });
     });
     for (;;) {
         char buf[1500];

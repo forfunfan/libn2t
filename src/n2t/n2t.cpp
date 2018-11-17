@@ -4,6 +4,7 @@
 #include <lwip/ip.h>
 #include <lwip/tcp.h>
 #include <lwip/timeouts.h>
+#include "utils.h"
 using namespace std;
 
 namespace Net2Tr {
@@ -14,10 +15,7 @@ namespace Net2Tr {
         static err_t output_cb(netif *ni, pbuf *p)
         {
             N2T *n2t = (N2T *) (ni->state);
-            string packet;
-            packet.reserve(p->tot_len);
-            for (pbuf *pp = p; pp != NULL; pp = pp->next)
-                packet += string((const char *) pp->payload, pp->len);
+            string packet = Utils::pbuf_to_str(p);
             if (n2t->output)
                 n2t->output(packet);
             return ERR_OK;
@@ -76,10 +74,9 @@ namespace Net2Tr {
 
     void N2T::input(const string &packet)
     {
-        pbuf *p = pbuf_alloc(PBUF_RAW, packet.size(), PBUF_POOL);
+        pbuf *p = Utils::str_to_pbuf(packet);
         if (p == NULL)
             return;
-        pbuf_take(p, packet.c_str(), packet.size());
         if (internal->ni.input(p, &internal->ni) != ERR_OK)
             pbuf_free(p);
     }

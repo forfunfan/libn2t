@@ -5,6 +5,7 @@ add_definitions(-Wall -Wextra)
 add_library(n2t
     src/n2t/n2t.cpp
     src/n2t/socket.cpp
+    src/n2t/utils.cpp
     src/sys_arch.c
     src/lwip/src/core/tcp_out.c
     src/lwip/src/core/tcp_in.c
