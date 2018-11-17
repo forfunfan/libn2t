@@ -7,23 +7,19 @@
 #include "socket.h"
 
 namespace Net2Tr {
-    typedef std::function<void(const std::string &packet)> OutputHandler;
-    typedef std::function<void(Socket &s)> NewConnectionHandler;
-
     class N2T {
+        typedef std::function<void(const std::string &packet)> OutputHandler;
+        typedef std::function<void(Socket *s)> NewConnectionHandler;
     public:
         N2T(std::string ip_addr, std::string netmask, uint16_t mtu = 1500);
         ~N2T();
         void input(const std::string &packet);
-        void set_output_handler(const OutputHandler &handler);
-        void set_new_connection_handler(const NewConnectionHandler &handler);
+        void async_output(const OutputHandler &handler);
+        void async_accept(Socket *s, const NewConnectionHandler &handler);
         static void process_events();
     private:
         class N2TInternal;
         N2TInternal *internal;
-        OutputHandler output;
-        NewConnectionHandler new_connection;
-        static void init();
     };
 }
 

@@ -1,4 +1,5 @@
 #include "socket.h"
+#include <queue>
 #include <lwip/tcp.h>
 #include "utils.h"
 using namespace std;
@@ -7,60 +8,94 @@ namespace Net2Tr {
     class Socket::SocketInternal {
     public:
         tcp_pcb *pcb;
+        RecvHandler recv;
+        SentHandler sent;
+        ErrHandler err;
+        unsigned pending_len;
+        std::string recv_buf;
+        queue<err_t> err_que;
+        bool end;
+
+        SocketInternal() : pcb(NULL), pending_len(0), end(false) {}
     };
 
-    Socket::Socket(void *pcb)
+    Socket::Socket()
     {
         internal = new SocketInternal();
+    }
+
+    Socket::~Socket()
+    {
+        if (internal->pcb != NULL)
+            tcp_close(internal->pcb);
+        delete internal;
+    }
+
+    void Socket::set_pcb(void *pcb)
+    {
         internal->pcb = (tcp_pcb *) pcb;
-        tcp_arg(internal->pcb, this);
+        tcp_arg(internal->pcb, internal);
         tcp_recv(internal->pcb, [](void *arg, tcp_pcb *, pbuf *p, err_t err) -> err_t
         {
-            Socket *s = (Socket *) arg;
             if (err == ERR_OK) {
-                if (s->recv)
-                    s->recv(Utils::pbuf_to_str(p));
+                SocketInternal *internal = (SocketInternal *) arg;
+                string packet = Utils::pbuf_to_str(p);
+                if (packet.size() == 0)
+                    internal->end = true;
+                if (internal->recv) {
+                    internal->recv(packet);
+                    internal->recv = RecvHandler();
+                } else {
+                    internal->recv_buf += packet;
+                }
             }
             return ERR_OK;
         });
         tcp_sent(internal->pcb, [](void *arg, tcp_pcb *, u16_t len) -> err_t
         {
-            Socket *s = (Socket *) arg;
-            if (s->sent)
-                s->sent(len);
+            SocketInternal *internal = (SocketInternal *) arg;
+            internal->pending_len -= len;
+            if (len == 0)
+                internal->sent();
             return ERR_OK;
         });
         tcp_err(internal->pcb, [](void *arg, err_t err)
         {
-            Socket *s = (Socket *) arg;
-            if (s->err)
-                s->err(err);
+            SocketInternal *internal = (SocketInternal *) arg;
+            if (internal->err) {
+                internal->err(err);
+                internal->err = ErrHandler();
+            } else {
+                internal->err_que.push(err);
+            }
         });
     }
 
-    Socket::~Socket()
+    void Socket::async_recv(const RecvHandler &handler)
     {
-        tcp_close(internal->pcb);
-        delete internal;
+        if (internal->recv_buf.size() == 0 && !internal->end) {
+            internal->recv = handler;
+        } else {
+            handler(internal->recv_buf);
+            internal->recv_buf.clear();
+        }
     }
 
-    void Socket::send(const string &packet)
+    void Socket::async_send(const string &packet, const SentHandler &handler)
     {
+        internal->pending_len += packet.size();
+        internal->sent = handler;
         tcp_write(internal->pcb, packet.c_str(), packet.size(), TCP_WRITE_FLAG_COPY);
     }
 
-    void Socket::set_recv_handler(const RecvHandler &handler)
+    void Socket::async_err(const ErrHandler &handler)
     {
-        recv = handler;
-    }
-
-    void Socket::set_sent_handler(const SentHandler &handler)
-    {
-        sent = handler;
-    }
-
-    void Socket::set_err_handler(const ErrHandler &handler)
-    {
-        err = handler;
+        if (internal->err_que.empty()) {
+            internal->err = handler;
+        } else {
+            err_t err = internal->err_que.front();
+            internal->err_que.pop();
+            handler(err);
+        }
     }
 }

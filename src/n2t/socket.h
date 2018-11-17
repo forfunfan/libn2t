@@ -1,29 +1,24 @@
 #ifndef _SOCKET_H_
 #define _SOCKET_H_
 
-#include <cstdint>
 #include <string>
 #include <functional>
 
 namespace Net2Tr {
-    typedef std::function<void(const std::string &packet)> RecvHandler;
-    typedef std::function<void(uint16_t len)> SentHandler;
-    typedef std::function<void(int8_t err)> ErrHandler;
-
     class Socket {
+        typedef std::function<void(const std::string &packet)> RecvHandler;
+        typedef std::function<void()> SentHandler;
+        typedef std::function<void(signed char err)> ErrHandler;
     public:
-        Socket(void *pcb);
+        Socket();
         ~Socket();
-        void send(const std::string &packet);
-        void set_recv_handler(const RecvHandler &handler);
-        void set_sent_handler(const SentHandler &handler);
-        void set_err_handler(const ErrHandler &handler);
+        void set_pcb(void *pcb);
+        void async_recv(const RecvHandler &handler);
+        void async_send(const std::string &packet, const SentHandler &handler);
+        void async_err(const ErrHandler &handler);
     private:
         class SocketInternal;
         SocketInternal *internal;
-        RecvHandler recv;
-        SentHandler sent;
-        ErrHandler err;
     };
 }
 
