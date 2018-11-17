@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(libn2t)
 set(CMAKE_CXX_STANDARD 11)
+add_definitions(-Wall -Wextra)
 add_library(n2t
     src/n2t/n2t.cpp
     src/n2t/socket.cpp

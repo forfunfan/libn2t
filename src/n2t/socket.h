@@ -1,15 +1,14 @@
 #ifndef _SOCKET_H_
 #define _SOCKET_H_
 
-#include <lwip/tcp.h>
-
 namespace Net2Tr {
     class Socket {
     public:
-        Socket(tcp_pcb *pcb);
+        Socket(void *pcb);
         ~Socket();
     private:
-        tcp_pcb *pcb;
+        class SocketInternal;
+        SocketInternal *internal;
     };
 }
 

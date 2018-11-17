@@ -1,10 +1,21 @@
 #include "socket.h"
+#include <lwip/tcp.h>
 
 namespace Net2Tr {
-    Socket::Socket(tcp_pcb *pcb) : pcb(pcb) {}
+    class Socket::SocketInternal {
+    public:
+        tcp_pcb *pcb;
+    };
+
+    Socket::Socket(void *pcb)
+    {
+        internal = new SocketInternal();
+        internal->pcb = (tcp_pcb *) pcb;
+    }
 
     Socket::~Socket()
     {
-        tcp_close(pcb);
+        tcp_close(internal->pcb);
+        delete internal;
     }
 }
