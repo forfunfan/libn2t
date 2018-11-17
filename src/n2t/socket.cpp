@@ -14,7 +14,7 @@ namespace Net2Tr {
         internal = new SocketInternal();
         internal->pcb = (tcp_pcb *) pcb;
         tcp_arg(internal->pcb, this);
-        tcp_recv(internal->pcb, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t
+        tcp_recv(internal->pcb, [](void *arg, tcp_pcb *, pbuf *p, err_t err) -> err_t
         {
             Socket *s = (Socket *) arg;
             if (err == ERR_OK) {
