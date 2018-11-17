@@ -448,4 +448,6 @@ void sys_unlock_tcpip_core(void);
 
 #define MEMP_MEM_MALLOC                 1
 
+#define IPV6_FRAG_COPYHEADER            1
+
 #endif /* LWIP_LWIPOPTS_H */

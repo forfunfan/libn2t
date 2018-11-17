@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 project(libn2t)
+set(CMAKE_CXX_STANDARD 11)
 add_library(n2t
     src/n2t/n2t.cpp
+    src/n2t/socket.cpp
     src/sys_arch.c
     src/lwip/src/core/tcp_out.c
     src/lwip/src/core/tcp_in.c
@@ -29,5 +31,5 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/lwip/src/include
 )
-add_executable(echo tests/echo.cpp)
+add_executable(echo examples/echo.cpp)
 target_link_libraries(echo n2t)
