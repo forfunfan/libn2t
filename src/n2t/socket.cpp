@@ -83,8 +83,9 @@ namespace Net2Tr {
         if (internal->recv_buf.size() == 0 && !internal->end) {
             internal->recv = handler;
         } else {
-            handler(internal->recv_buf);
+            string tmp = internal->recv_buf;
             internal->recv_buf.clear();
+            handler(tmp);
         }
     }
 
