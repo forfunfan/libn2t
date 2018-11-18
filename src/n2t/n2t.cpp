@@ -47,7 +47,7 @@ namespace Net2Tr {
         }
     };
 
-    N2T::N2T(string ip_addr, string netmask, uint16_t mtu)
+    N2T::N2T(string ip_addr, string netmask, string ip6_addr, uint16_t mtu)
     {
         internal = new N2TInternal();
         ip4_addr_t addr;
@@ -67,6 +67,17 @@ namespace Net2Tr {
             return ERR_OK;
         }, &ip_input);
         internal->ni.mtu = mtu;
+        if (ip6_addr.size() > 0) {
+            ip6_addr_t ip6addr;
+            ip6addr_aton(ip6_addr.c_str(), &ip6addr);
+            netif_ip6_addr_set(&internal->ni, 0, &ip6addr);
+            netif_ip6_addr_set_state(&internal->ni, 0, IP6_ADDR_VALID);
+            internal->ni.output_ip6 = [](netif *ni, pbuf *p, const ip6_addr_t *) -> err_t
+            {
+                return N2TInternal::output_cb(ni, p);
+            };
+            internal->ni.mtu6 = mtu;
+        }
         netif_set_up(&internal->ni);
         netif_set_link_up(&internal->ni);
         netif_set_default(&internal->ni);

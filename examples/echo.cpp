@@ -86,7 +86,7 @@ private:
 
 class EchoService {
 public:
-    EchoService(string ip_addr, string netmask, const char *tun) : n2t(ip_addr, netmask)
+    EchoService(string ip_addr, string netmask, string ip6_addr, const char *tun) : n2t(ip_addr, netmask, ip6_addr)
     {
         fd = tun_alloc(tun);
     }
@@ -130,7 +130,7 @@ private:
 
 int main()
 {
-    EchoService service("10.114.51.5", "255.255.255.254", "tun0");
+    EchoService service("10.114.51.5", "255.255.255.254", "fd00:114:514::1", "tun0");
     service.start();
     return 0;
 }

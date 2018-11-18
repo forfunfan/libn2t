@@ -12,7 +12,7 @@ namespace Net2Tr {
 
     class N2T {
     public:
-        N2T(std::string ip_addr, std::string netmask, uint16_t mtu = 1500);
+        N2T(std::string ip_addr, std::string netmask, std::string ip6_addr = std::string(), uint16_t mtu = 1500);
         ~N2T();
         void input(const std::string &packet);
         void async_output(const OutputHandler &handler);
