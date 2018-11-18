@@ -81,7 +81,7 @@
  * MEM_SIZE: the size of the heap memory. If the application will send
  * a lot of data that needs to be copied, this should be set high.
  */
-#define MEM_SIZE                        1600
+#define MEM_SIZE                        1048576
 
 /*
    ------------------------------------------------
@@ -93,7 +93,7 @@
  * If the application sends a lot of data out of ROM (or other static memory),
  * this should be set high.
  */
-#define MEMP_NUM_PBUF                   16
+#define MEMP_NUM_PBUF                   100
 
 /**
  * MEMP_NUM_RAW_PCB: Number of raw connection PCBs
@@ -106,7 +106,7 @@
  * per active UDP "connection".
  * (requires the LWIP_UDP option)
  */
-#define MEMP_NUM_UDP_PCB                4
+#define MEMP_NUM_UDP_PCB                1
 
 /**
  * MEMP_NUM_TCP_PCB: the number of simulatenously active TCP connections.
@@ -118,7 +118,7 @@
  * MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP connections.
  * (requires the LWIP_TCP option)
  */
-#define MEMP_NUM_TCP_PCB_LISTEN         4
+#define MEMP_NUM_TCP_PCB_LISTEN         1
 
 /**
  * MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP segments.
@@ -175,7 +175,7 @@
 /**
  * PBUF_POOL_SIZE: the number of buffers in the pbuf pool.
  */
-#define PBUF_POOL_SIZE                  8
+#define PBUF_POOL_SIZE                  100
 
 /*
    ---------------------------------
@@ -443,11 +443,10 @@ void sys_unlock_tcpip_core(void);
 #endif
 
 #define LWIP_IPV6                       1
-
 #define MEM_LIBC_MALLOC                 1
-
 #define MEMP_MEM_MALLOC                 1
-
+#define TCP_MSS                         1460
+#define TCP_SND_BUF                     16384
 #define IPV6_FRAG_COPYHEADER            1
 
 #endif /* LWIP_LWIPOPTS_H */

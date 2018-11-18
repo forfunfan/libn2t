@@ -101,7 +101,6 @@ public:
             int len = read(fd, buf, sizeof(buf));
             printf("input a packet of length %d\n", len);
             n2t.input(string(buf, len));
-            n2t.process_events();
         }
     }
 private:

@@ -34,6 +34,7 @@ namespace Net2Tr {
     void Socket::set_pcb(void *pcb)
     {
         internal->pcb = (tcp_pcb *) pcb;
+        tcp_nagle_disable(internal->pcb);
         tcp_arg(internal->pcb, internal);
         tcp_recv(internal->pcb, [](void *arg, tcp_pcb *, pbuf *p, err_t err) -> err_t
         {
