@@ -112,4 +112,24 @@ namespace Net2Tr {
         internal->sent = SentHandler();
         internal->err = ErrHandler();
     }
+
+    std::string Socket::src_addr()
+    {
+        return ipaddr_ntoa(&internal->pcb->remote_ip);
+    }
+
+    uint16_t Socket::src_port()
+    {
+        return internal->pcb->remote_port;
+    }
+
+    std::string Socket::dst_addr()
+    {
+        return ipaddr_ntoa(&internal->pcb->local_ip);
+    }
+
+    uint16_t Socket::dst_port()
+    {
+        return internal->pcb->local_port;
+    }
 }

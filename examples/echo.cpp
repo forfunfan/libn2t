@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <cstdint>
 #include <string>
 #include <memory>
 #include <unistd.h>
@@ -35,13 +36,17 @@ public:
     {
         async_err();
         async_recv();
+        endpoints = s.src_addr() + ':' + to_string(s.src_port()) + " -> " + s.dst_addr() + ':' + to_string(s.dst_port());
+        printf("new connection: %s\n", endpoints.c_str());
     }
 
     ~EchoSession()
     {
-        printf("connection closed\n");
+        printf("connection closed: %s\n", endpoints.c_str());
     }
 private:
+    string endpoints;
+
     void async_recv()
     {
         auto self = shared_from_this();
@@ -71,7 +76,7 @@ private:
     void async_err()
     {
         auto self = shared_from_this();
-        s.async_err([this, self](signed char err)
+        s.async_err([this, self](int8_t err)
         {
             printf("received error: %d\n", err);
             s.cancel();
@@ -117,7 +122,6 @@ private:
         auto session = make_shared<EchoSession>();
         n2t.async_accept(&session->s, [this, session](Socket *)
         {
-            printf("new connection\n");
             session->start();
             async_accept();
         });
