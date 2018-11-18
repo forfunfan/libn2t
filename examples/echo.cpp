@@ -95,6 +95,7 @@ public:
     {
         async_output();
         async_accept();
+        async_udp_recv();
         for (;;) {
             char buf[1500];
             int len = read(fd, buf, sizeof(buf));
@@ -124,6 +125,22 @@ private:
         {
             session->start();
             async_accept();
+        });
+    }
+
+    void async_udp_recv()
+    {
+        n2t.async_udp_recv([this](const UDPPacket &packet)
+        {
+            printf("received UDP packet (%s:%u -> %s:%u): %s\n", packet.src_addr.c_str(), packet.src_port, packet.dst_addr.c_str(), packet.dst_port, packet.data.c_str());
+            UDPPacket t;
+            t.src_addr = packet.dst_addr;
+            t.src_port = packet.dst_port;
+            t.dst_addr = packet.src_addr;
+            t.dst_port = packet.src_port;
+            t.data = packet.data;
+            n2t.udp_send(t);
+            async_udp_recv();
         });
     }
 };

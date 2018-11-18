@@ -189,8 +189,8 @@ namespace Net2Tr {
         internal->upcb->local_port = packet.src_port;
         ip_addr_t dst_addr;
         ipaddr_aton(packet.dst_addr.c_str(), &dst_addr);
-        if (udp_sendto_if_src(internal->upcb, p, &dst_addr, packet.dst_port, &internal->ni, &src_addr) != ERR_OK)
-            pbuf_free(p);
+        udp_sendto_if_src(internal->upcb, p, &dst_addr, packet.dst_port, &internal->ni, &src_addr);
+        pbuf_free(p);
     }
 
     void N2T::cancel()
