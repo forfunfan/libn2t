@@ -4,6 +4,7 @@
 #include <lwip/netif.h>
 #include <lwip/ip.h>
 #include <lwip/tcp.h>
+#include <lwip/udp.h>
 #include <lwip/timeouts.h>
 #include "utils.h"
 using namespace std;
@@ -13,10 +14,13 @@ namespace Net2Tr {
     public:
         netif ni;
         tcp_pcb *listen_pcb;
+        udp_pcb *upcb;
         OutputHandler output;
         NewConnectionHandler new_connection;
+        UDPRecvHandler udp_recv;
         std::queue<string> output_que;
         std::queue<tcp_pcb *> connection_que;
+        std::queue<UDPPacket> udp_que;
         Socket *pending_socket;
 
         N2TInternal()
@@ -101,6 +105,27 @@ namespace Net2Tr {
             }
             return ERR_OK;
         });
+        internal->upcb = udp_new_ip_type(IPADDR_TYPE_ANY);
+        udp_bind_netif(internal->upcb, &internal->ni);
+        udp_bind(internal->upcb, IP_ANY_TYPE, 14514);
+        udp_recv(internal->upcb, [](void *arg, udp_pcb *pcb, pbuf *p, const ip_addr_t *addr, u16_t port)
+        {
+            N2TInternal *internal = (N2TInternal *) arg;
+            UDPPacket packet;
+            packet.src_addr = ipaddr_ntoa(addr);
+            packet.src_port = port;
+            packet.dst_addr = ipaddr_ntoa(ip_current_dest_addr());
+            packet.dst_port = pcb->local_port;
+            packet.data = Utils::pbuf_to_str(p);
+            pbuf_free(p);
+            if (internal->udp_recv) {
+                UDPRecvHandler tmp = internal->udp_recv;
+                internal->udp_recv = UDPRecvHandler();
+                tmp(packet);
+            } else {
+                internal->udp_que.push(packet);
+            }
+        }, internal);
     }
 
     N2T::~N2T()
@@ -141,6 +166,31 @@ namespace Net2Tr {
             s->set_pcb(pcb);
             handler(s);
         }
+    }
+
+    void N2T::async_udp_recv(const UDPRecvHandler &handler)
+    {
+        if (internal->udp_que.empty()) {
+            internal->udp_recv = handler;
+        } else {
+            UDPPacket packet = internal->udp_que.front();
+            internal->udp_que.pop();
+            handler(packet);
+        }
+    }
+
+    void N2T::udp_send(const UDPPacket &packet)
+    {
+        pbuf *p = Utils::str_to_pbuf(packet.data);
+        if (p == NULL)
+            return;
+        ip_addr_t src_addr;
+        ipaddr_aton(packet.src_addr.c_str(), &src_addr);
+        internal->upcb->local_port = packet.src_port;
+        ip_addr_t dst_addr;
+        ipaddr_aton(packet.dst_addr.c_str(), &dst_addr);
+        if (udp_sendto_if_src(internal->upcb, p, &dst_addr, packet.dst_port, &internal->ni, &src_addr) != ERR_OK)
+            pbuf_free(p);
     }
 
     void N2T::cancel()

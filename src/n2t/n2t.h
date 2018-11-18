@@ -5,10 +5,12 @@
 #include <string>
 #include <functional>
 #include "socket.h"
+#include "udppacket.h"
 
 namespace Net2Tr {
     typedef std::function<void(const std::string &packet)> OutputHandler;
     typedef std::function<void(Socket *s)> NewConnectionHandler;
+    typedef std::function<void(const UDPPacket &packet)> UDPRecvHandler;
 
     class N2T {
     public:
@@ -17,6 +19,8 @@ namespace Net2Tr {
         void input(const std::string &packet);
         void async_output(const OutputHandler &handler);
         void async_accept(Socket *s, const NewConnectionHandler &handler);
+        void async_udp_recv(const UDPRecvHandler &handler);
+        void udp_send(const UDPPacket &packet);
         void cancel();
         static void process_events();
     private:

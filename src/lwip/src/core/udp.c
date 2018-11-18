@@ -304,6 +304,9 @@ udp_input(struct pbuf *p, struct netif *inp)
     }
 
     prev = pcb;
+
+    pcb->local_port = dest;
+    break;
   }
   /* no fully matching pcb found? then look for an unconnected pcb */
   if (pcb == NULL) {
