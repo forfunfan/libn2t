@@ -42,6 +42,8 @@ namespace Net2Tr {
                 string packet = Utils::pbuf_to_str(p);
                 if (packet.size() == 0)
                     internal->end = true;
+                else
+                    pbuf_free(p);
                 if (internal->recv) {
                     RecvHandler tmp = internal->recv;
                     internal->recv = RecvHandler();

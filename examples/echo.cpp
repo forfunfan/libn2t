@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <memory>
@@ -35,24 +36,34 @@ public:
         async_err();
         async_recv();
     }
+
+    ~EchoSession()
+    {
+        printf("connection closed\n");
+    }
 private:
     void async_recv()
     {
         auto self = shared_from_this();
         s.async_recv([this, self](const string &packet)
         {
-            if (packet.size() == 0)
+            if (packet.size() == 0) {
+                printf("received eof\n");
                 s.cancel();
-            else
+            } else {
+                printf("received packet: %s\n", packet.c_str());
                 async_send(packet);
+            }
         });
     }
 
     void async_send(const string &packet)
     {
         auto self = shared_from_this();
-        s.async_send(packet, [this, self]()
+        printf("send packet: %s\n", packet.c_str());
+        s.async_send(packet, [this, self, packet]()
         {
+            printf("sent packet: %s\n", packet.c_str());
             async_recv();
         });
     }
@@ -60,8 +71,9 @@ private:
     void async_err()
     {
         auto self = shared_from_this();
-        s.async_err([this, self](signed char)
+        s.async_err([this, self](signed char err)
         {
+            printf("received error: %d\n", err);
             s.cancel();
         });
     }
@@ -81,6 +93,7 @@ public:
         for (;;) {
             char buf[1500];
             int len = read(fd, buf, sizeof(buf));
+            printf("input a packet of length %d\n", len);
             n2t.input(string(buf, len));
             n2t.process_events();
         }
@@ -93,6 +106,7 @@ private:
     {
         n2t.async_output([this](const string &packet)
         {
+            printf("output a packet of length %lu\n", packet.size());
             write(fd, packet.c_str(), packet.size());
             async_output();
         });
@@ -103,6 +117,7 @@ private:
         auto session = make_shared<EchoSession>();
         n2t.async_accept(&session->s, [this, session](Socket *)
         {
+            printf("new connection\n");
             session->start();
             async_accept();
         });
