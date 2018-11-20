@@ -28,7 +28,7 @@
 
 namespace Net2Tr {
     typedef std::function<void(const std::string &packet)> OutputHandler;
-    typedef std::function<void(Socket *s)> NewConnectionHandler;
+    typedef std::function<void()> NewConnectionHandler;
     typedef std::function<void(const UDPPacket &packet)> UDPRecvHandler;
 
     class N2T {

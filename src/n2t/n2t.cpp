@@ -117,7 +117,7 @@ namespace Net2Tr {
                     internal->pending_socket->set_pcb(newpcb);
                     NewConnectionHandler tmp = internal->new_connection;
                     internal->new_connection = NewConnectionHandler();
-                    tmp(internal->pending_socket);
+                    tmp();
                 } else {
                     internal->connection_que.push(newpcb);
                 }
@@ -183,7 +183,7 @@ namespace Net2Tr {
             tcp_pcb *pcb = internal->connection_que.front();
             internal->connection_que.pop();
             s->set_pcb(pcb);
-            handler(s);
+            handler();
         }
     }
 

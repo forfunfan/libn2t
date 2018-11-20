@@ -139,7 +139,7 @@ private:
     void async_accept()
     {
         auto session = make_shared<EchoSession>();
-        n2t.async_accept(&session->s, [this, session](Socket *)
+        n2t.async_accept(&session->s, [this, session]()
         {
             session->start();
             async_accept();
