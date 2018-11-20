@@ -92,7 +92,7 @@ class EchoService {
 public:
     EchoService(const string &ip_addr, const string &netmask, const string &ip6_addr, const string &tun) : n2t(ip_addr, netmask, ip6_addr)
     {
-        if((fd = open("/dev/net/tun", O_RDWR)) < 0) {
+        if ((fd = open("/dev/net/tun", O_RDWR)) < 0) {
             perror("open");
             exit(EXIT_FAILURE);
         }
@@ -100,7 +100,7 @@ public:
         memset(&ifr, 0, sizeof(ifr));
         ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
         strcpy(ifr.ifr_name, tun.c_str());
-        if(ioctl(fd, TUNSETIFF, (void *) &ifr) < 0) {
+        if (ioctl(fd, TUNSETIFF, (void *) &ifr) < 0) {
             perror("ioctl");
             close(fd);
             exit(EXIT_FAILURE);

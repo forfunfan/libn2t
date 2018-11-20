@@ -20,4 +20,20 @@
 #ifndef _N2T_N2S_H_
 #define _N2T_N2S_H_
 
+#include <cstdint>
+#include <string>
+#include "n2t.h"
+
+namespace Net2Tr {
+    class N2S {
+    public:
+        N2S(int tun_fd, N2T &n2t, const std::string &socks5_addr, uint16_t socks5_port);
+        ~N2S();
+        void start();
+    private:
+        class N2SInternal;
+        N2SInternal *internal;
+    };
+}
+
 #endif // _N2T_N2S_H_

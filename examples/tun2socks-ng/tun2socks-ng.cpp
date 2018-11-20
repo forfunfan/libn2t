@@ -17,9 +17,36 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/if.h>
+#include <linux/if_tun.h>
+#include <n2t/n2t.h>
 #include <n2t/n2s.h>
+using namespace Net2Tr;
 
 int main()
 {
+    int fd;
+    if ((fd = open("/dev/net/tun", O_RDWR)) < 0) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+    ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    strcpy(ifr.ifr_name, "tun0");
+    if (ioctl(fd, TUNSETIFF, (void *) &ifr) < 0) {
+        perror("ioctl");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+    N2T n2t("10.114.51.5", "255.255.255.254", "fd00:114:514::1");
+    N2S n2s(fd, n2t, "", 0);
+    n2s.start();
     return 0;
 }
