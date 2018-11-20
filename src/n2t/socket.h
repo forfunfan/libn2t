@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _SOCKET_H_
-#define _SOCKET_H_
+#ifndef _N2T_SOCKET_H_
+#define _N2T_SOCKET_H_
 
 #include <cstdint>
 #include <string>
@@ -48,4 +48,4 @@ namespace Net2Tr {
     };
 }
 
-#endif // _SOCKET_H_
+#endif // _N2T_SOCKET_H_

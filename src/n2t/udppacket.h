@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _UDPPACKET_H_
-#define _UDPPACKET_H_
+#ifndef _N2T_UDPPACKET_H_
+#define _N2T_UDPPACKET_H_
 
 #include <cstdint>
 #include <string>
@@ -34,4 +34,4 @@ namespace Net2Tr {
     };
 }
 
-#endif // _UDPPACKET_H_
+#endif // _N2T_UDPPACKET_H_

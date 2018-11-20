@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef _N2T_UTILS_H_
+#define _N2T_UTILS_H_
 
 #include <string>
 #include <lwip/pbuf.h>
@@ -31,4 +31,4 @@ namespace Net2Tr {
     };
 }
 
-#endif // _UTILS_H_
+#endif // _N2T_UTILS_H_
