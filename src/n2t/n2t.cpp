@@ -70,7 +70,7 @@ namespace Net2Tr {
         }
     };
 
-    N2T::N2T(string ip_addr, string netmask, string ip6_addr, uint16_t mtu)
+    N2T::N2T(const string &ip_addr, const string &netmask, const string &ip6_addr, uint16_t mtu)
     {
         internal = new N2TInternal();
         ip4_addr_t addr;

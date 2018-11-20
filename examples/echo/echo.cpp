@@ -19,6 +19,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <cstdint>
 #include <string>
 #include <memory>
@@ -30,22 +31,6 @@
 #include <n2t/n2t.h>
 using namespace Net2Tr;
 using namespace std;
-
-int tun_alloc(const char *dev)
-{
-    ifreq ifr;
-    int fd, err;
-    if((fd = open("/dev/net/tun", O_RDWR)) < 0)
-        return fd;
-    memset(&ifr, 0, sizeof(ifr));
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-    strncpy(ifr.ifr_name, dev, IFNAMSIZ);
-    if((err = ioctl(fd, TUNSETIFF, (void *) &ifr)) < 0) {
-        close(fd);
-        return err;
-    }
-    return fd;
-}
 
 class EchoSession : public enable_shared_from_this<EchoSession> {
 public:
@@ -72,10 +57,10 @@ private:
         s.async_recv([this, self](const string &packet)
         {
             if (packet.size() == 0) {
-                printf("received eof\n");
+                printf("received eof (%s)\n", endpoints.c_str());
                 s.cancel();
             } else {
-                printf("received packet: %s\n", packet.c_str());
+                printf("received packet (%s): %s\n", endpoints.c_str(), packet.c_str());
                 async_send(packet);
             }
         });
@@ -84,10 +69,10 @@ private:
     void async_send(const string &packet)
     {
         auto self = shared_from_this();
-        printf("send packet: %s\n", packet.c_str());
+        printf("send packet (%s): %s\n", endpoints.c_str(), packet.c_str());
         s.async_send(packet, [this, self, packet]()
         {
-            printf("sent packet: %s\n", packet.c_str());
+            printf("sent packet (%s): %s\n", endpoints.c_str(), packet.c_str());
             async_recv();
         });
     }
@@ -97,7 +82,7 @@ private:
         auto self = shared_from_this();
         s.async_err([this, self](int8_t err)
         {
-            printf("received error: %d\n", err);
+            printf("received error (%s): %d\n", endpoints.c_str(), err);
             s.cancel();
         });
     }
@@ -105,9 +90,21 @@ private:
 
 class EchoService {
 public:
-    EchoService(string ip_addr, string netmask, string ip6_addr, const char *tun) : n2t(ip_addr, netmask, ip6_addr)
+    EchoService(const string &ip_addr, const string &netmask, const string &ip6_addr, const string &tun) : n2t(ip_addr, netmask, ip6_addr)
     {
-        fd = tun_alloc(tun);
+        if((fd = open("/dev/net/tun", O_RDWR)) < 0) {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        ifreq ifr;
+        memset(&ifr, 0, sizeof(ifr));
+        ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+        strcpy(ifr.ifr_name, tun.c_str());
+        if(ioctl(fd, TUNSETIFF, (void *) &ifr) < 0) {
+            perror("ioctl");
+            close(fd);
+            exit(EXIT_FAILURE);
+        }
     }
 
     void start()
@@ -118,6 +115,10 @@ public:
         for (;;) {
             char buf[1500];
             int len = read(fd, buf, sizeof(buf));
+            if (len < 0) {
+                perror("read");
+                exit(EXIT_FAILURE);
+            }
             printf("input a packet of length %d\n", len);
             n2t.input(string(buf, len));
         }
@@ -167,5 +168,5 @@ int main()
 {
     EchoService service("10.114.51.5", "255.255.255.254", "fd00:114:514::1", "tun0");
     service.start();
-    return 0;
+    exit(EXIT_SUCCESS);
 }
