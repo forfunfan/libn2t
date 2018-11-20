@@ -216,6 +216,7 @@ namespace Net2Tr {
     {
         internal->output = OutputHandler();
         internal->new_connection = NewConnectionHandler();
+        internal->udp_recv = UDPRecvHandler();
     }
 
     void N2T::process_events()
