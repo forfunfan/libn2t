@@ -20,9 +20,22 @@
 #ifndef _N2T_TCPSESSION_H_
 #define _N2T_TCPSESSION_H_
 
-namespace Net2Tr {
-    class TCPSession {
+#include <cstdint>
+#include <string>
+#include <memory>
 
+namespace Net2Tr {
+    class Socket;
+
+    class TCPSession : public std::enable_shared_from_this<TCPSession> {
+    public:
+        TCPSession(void *service, const std::string &socks5_addr, uint16_t socks5_port);
+        ~TCPSession();
+        Socket *socket();
+        void start();
+    private:
+        class TCPSessionInternal;
+        TCPSessionInternal *internal;
     };
 }
 

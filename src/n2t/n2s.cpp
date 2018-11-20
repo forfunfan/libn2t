@@ -23,6 +23,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include "n2t.h"
+#include "tcpsession.h"
 using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::posix;
@@ -74,7 +75,12 @@ namespace Net2Tr {
 
         void async_accept()
         {
-
+            auto session = make_shared<TCPSession>(&service, socks5_addr, socks5_port);
+            n2t.async_accept(session->socket(), [this, session]()
+            {
+                session->start();
+                async_accept();
+            });
         }
     };
 

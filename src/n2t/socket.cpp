@@ -45,8 +45,12 @@ namespace Net2Tr {
 
     Socket::~Socket()
     {
-        if (internal->pcb != NULL)
+        if (internal->pcb != NULL) {
+            tcp_recv(internal->pcb, NULL);
+            tcp_sent(internal->pcb, NULL);
+            tcp_err(internal->pcb, NULL);
             tcp_close(internal->pcb);
+        }
         delete internal;
     }
 
