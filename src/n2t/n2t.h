@@ -23,10 +23,11 @@
 #include <cstdint>
 #include <string>
 #include <functional>
-#include "socket.h"
-#include "udppacket.h"
 
 namespace Net2Tr {
+    class Socket;
+    class UDPPacket;
+
     typedef std::function<void(const std::string &packet)> OutputHandler;
     typedef std::function<void()> NewConnectionHandler;
     typedef std::function<void(const UDPPacket &packet)> UDPRecvHandler;

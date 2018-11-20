@@ -29,6 +29,8 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <n2t/n2t.h>
+#include <n2t/socket.h>
+#include <n2t/udppacket.h>
 using namespace Net2Tr;
 using namespace std;
 

@@ -46,7 +46,7 @@ int main()
         exit(EXIT_FAILURE);
     }
     N2T n2t("10.114.51.5", "255.255.255.254", "fd00:114:514::1");
-    N2S n2s(fd, n2t, "", 0);
+    N2S n2s(fd, n2t, "127.0.0.1", 1080);
     n2s.start();
     return 0;
 }

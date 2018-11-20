@@ -25,6 +25,8 @@
 #include <lwip/tcp.h>
 #include <lwip/udp.h>
 #include <lwip/timeouts.h>
+#include "socket.h"
+#include "udppacket.h"
 #include "utils.h"
 using namespace std;
 

@@ -18,6 +18,7 @@
  */
 
 #include "utils.h"
+#include <lwip/pbuf.h>
 using namespace std;
 
 namespace Net2Tr {

@@ -17,37 +17,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _N2T_SOCKET_H_
-#define _N2T_SOCKET_H_
-
-#include <cstdint>
-#include <string>
-#include <functional>
-
-struct tcp_pcb;
+#ifndef _N2T_TCPSESSION_H_
+#define _N2T_TCPSESSION_H_
 
 namespace Net2Tr {
-    typedef std::function<void(const std::string &packet)> RecvHandler;
-    typedef std::function<void()> SentHandler;
-    typedef std::function<void(int8_t err)> ErrHandler;
+    class TCPSession {
 
-    class Socket {
-    public:
-        Socket();
-        ~Socket();
-        void set_pcb(tcp_pcb *pcb);
-        void async_recv(const RecvHandler &handler);
-        void async_send(const std::string &packet, const SentHandler &handler);
-        void async_err(const ErrHandler &handler);
-        void cancel();
-        std::string src_addr();
-        uint16_t src_port();
-        std::string dst_addr();
-        uint16_t dst_port();
-    private:
-        class SocketInternal;
-        SocketInternal *internal;
     };
 }
 
-#endif // _N2T_SOCKET_H_
+#endif // _N2T_TCPSESSION_H_

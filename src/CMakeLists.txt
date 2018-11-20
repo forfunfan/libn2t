@@ -2,6 +2,7 @@ add_library(n2t
     n2t/n2s.cpp
     n2t/n2t.cpp
     n2t/socket.cpp
+    n2t/tcpsession.cpp
     n2t/utils.cpp
     sys_arch.c
     lwip/src/core/tcp_out.c

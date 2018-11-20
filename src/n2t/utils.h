@@ -21,7 +21,8 @@
 #define _N2T_UTILS_H_
 
 #include <string>
-#include <lwip/pbuf.h>
+
+struct pbuf;
 
 namespace Net2Tr {
     class Utils {
