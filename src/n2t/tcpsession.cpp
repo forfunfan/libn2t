@@ -22,6 +22,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 #include "socket.h"
+#include "utils.h"
 using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::ip;
@@ -43,6 +44,28 @@ namespace Net2Tr {
         char recv_buf[8192];
 
         TCPSessionInternal(TCPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port) : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service) {}
+
+        void in_async_read()
+        {
+            auto self = session.shared_from_this();
+            in_sock.async_recv([this, self](const string &packet)
+            {
+                if (packet.size() == 0) {
+                    destroy();
+                    return;
+                }
+                in_recv(packet);
+            });
+        }
+
+        void in_async_write(const string &data)
+        {
+            auto self = session.shared_from_this();
+            in_sock.async_send(data, [this, self]()
+            {
+                in_sent();
+            });
+        }
 
         void out_async_read()
         {
@@ -70,19 +93,43 @@ namespace Net2Tr {
             });
         }
 
-        void out_recv(const string &packet)
+        void in_recv(const string &data)
+        {
+            if (status == FORWARD)
+                out_async_write(data);
+        }
+
+        void in_sent()
+        {
+            if (status == FORWARD)
+                out_async_read();
+        }
+
+        void out_recv(const string &data)
         {
             switch (status) {
-                case HANDSHAKE:
-                    if (packet != string("\x05\x00", 2)) {
+                case HANDSHAKE: {
+                    if (data != string("\x05\x00", 2)) {
                         destroy();
                         return;
                     }
                     status = REQUEST;
+                    string req("\x05\x01\x00", 3);
+                    req += Utils::addrport_to_socks5(in_sock.dst_addr(), in_sock.dst_port());
+                    out_async_write(req);
                     break;
+                }
                 case REQUEST:
+                    if (data.size() <= 3 || data.substr(0, 3) != string("\x05\x00\x00", 3)) {
+                        destroy();
+                        return;
+                    }
+                    status = FORWARD;
+                    in_async_read();
+                    out_async_read();
                     break;
                 case FORWARD:
+                    in_async_write(data);
                     break;
                 default: break;
             }
@@ -96,6 +143,7 @@ namespace Net2Tr {
                     out_async_read();
                     break;
                 case FORWARD:
+                    in_async_read();
                     break;
                 default: break;
             }

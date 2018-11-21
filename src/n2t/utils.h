@@ -29,6 +29,7 @@ namespace Net2Tr {
     public:
         static pbuf *str_to_pbuf(const std::string &str);
         static std::string pbuf_to_str(pbuf *p);
+        static std::string addrport_to_socks5(const std::string &addr, uint16_t port);
     };
 }
 

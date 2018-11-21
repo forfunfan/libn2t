@@ -49,6 +49,7 @@ namespace Net2Tr {
             tcp_recv(internal->pcb, NULL);
             tcp_sent(internal->pcb, NULL);
             tcp_err(internal->pcb, NULL);
+            tcp_shutdown(internal->pcb, 0, 1);
             tcp_close(internal->pcb);
         }
         delete internal;
@@ -118,6 +119,7 @@ namespace Net2Tr {
         internal->pending_len += packet.size();
         internal->sent = handler;
         tcp_write(internal->pcb, packet.c_str(), packet.size(), TCP_WRITE_FLAG_COPY);
+        tcp_output(internal->pcb);
     }
 
     void Socket::async_err(const ErrHandler &handler)

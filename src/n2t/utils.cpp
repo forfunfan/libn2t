@@ -19,7 +19,10 @@
 
 #include "utils.h"
 #include <lwip/pbuf.h>
+#include <boost/asio/ip/address.hpp>
 using namespace std;
+using namespace boost::asio;
+using namespace boost::asio::ip;
 
 namespace Net2Tr {
     pbuf *Utils::str_to_pbuf(const string &str)
@@ -40,5 +43,25 @@ namespace Net2Tr {
         for (pbuf *pp = p; pp != NULL; pp = pp->next)
             str += string((const char *) pp->payload, pp->len);
         return str;
+    }
+
+    string Utils::addrport_to_socks5(const string &addr, uint16_t port)
+    {
+        string ret;
+        address a = address::from_string(addr);
+        if (a.is_v4()) {
+            ret += '\x01';
+            auto ip = a.to_v4().to_bytes();
+            for (int i = 0; i < 4; ++i)
+                ret += char(ip[i]);
+        } else {
+            ret += '\x04';
+            auto ip = a.to_v6().to_bytes();
+            for (int i = 0; i < 16; ++i)
+                ret += char(ip[i]);
+        }
+        ret += char(uint8_t(port >> 8));
+        ret += char(uint8_t(port & 0xFF));
+        return ret;
     }
 }
