@@ -19,11 +19,13 @@
 
 #include "n2s.h"
 #include <memory>
+#include <list>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include "n2t.h"
 #include "tcpsession.h"
+#include "udpsession.h"
 using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::posix;
@@ -37,6 +39,7 @@ namespace Net2Tr {
         string socks5_addr;
         uint16_t socks5_port;
         steady_timer lwip_timer;
+        list<shared_ptr<UDPSession> > udp_sessions;
 
         N2SInternal(int tun_fd, N2T &n2t, const string &socks5_addr, uint16_t socks5_port) : fd(service, tun_fd), n2t(n2t), socks5_addr(socks5_addr), socks5_port(socks5_port), lwip_timer(service) {}
 
@@ -82,6 +85,30 @@ namespace Net2Tr {
                 async_accept();
             });
         }
+
+        void async_read_udp()
+        {
+            n2t.async_udp_recv([this](const UDPPacket &packet)
+            {
+                for (auto it = udp_sessions.begin(); it != udp_sessions.end(); ++it)
+                    if ((*it)->process(packet))
+                        return;
+                auto session = make_shared<UDPSession>(&service, socks5_addr, socks5_port, packet, bind(&N2SInternal::gc, this), bind(&N2SInternal::async_read_udp, this), bind(&N2T::udp_send, &n2t, placeholders::_1));
+                udp_sessions.push_back(session);
+                session->start();
+            });
+        }
+
+        void gc()
+        {
+            for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
+                auto next = ++it;
+                --it;
+                if (it->use_count() == 1)
+                    udp_sessions.erase(it);
+                it = next;
+            }
+        }
     };
 
     N2S::N2S(int tun_fd, N2T &n2t, const string &socks5_addr, uint16_t socks5_port)
@@ -100,6 +127,7 @@ namespace Net2Tr {
         internal->async_read_fd();
         internal->async_output();
         internal->async_accept();
+        internal->async_read_udp();
         internal->service.run();
     }
 }
