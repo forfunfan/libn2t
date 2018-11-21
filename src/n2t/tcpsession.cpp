@@ -182,6 +182,10 @@ namespace Net2Tr {
     void TCPSession::start()
     {
         auto self = shared_from_this();
+        internal->in_sock.async_err([this, self](int8_t)
+        {
+            internal->destroy();
+        });
         internal->out_sock.async_connect(tcp::endpoint(address::from_string(internal->socks5_addr), internal->socks5_port), [this, self](const boost::system::error_code &error)
         {
             if (error) {
