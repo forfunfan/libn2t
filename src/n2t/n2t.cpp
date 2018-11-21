@@ -151,6 +151,7 @@ namespace Net2Tr {
 
     N2T::~N2T()
     {
+        udp_remove(internal->upcb);
         tcp_close(internal->listen_pcb);
         netif_remove(&internal->ni);
         delete internal;
