@@ -39,7 +39,7 @@ namespace Net2Tr {
         string socks5_addr;
         uint16_t socks5_port;
         steady_timer lwip_timer;
-        list<shared_ptr<UDPSession> > udp_sessions;
+        list<weak_ptr<UDPSession> > udp_sessions;
 
         N2SInternal(int tun_fd, N2T &n2t, const string &socks5_addr, uint16_t socks5_port) : fd(service, tun_fd), n2t(n2t), socks5_addr(socks5_addr), socks5_port(socks5_port), lwip_timer(service) {}
 
@@ -90,24 +90,22 @@ namespace Net2Tr {
         {
             n2t.async_udp_recv([this](const UDPPacket &packet)
             {
-                for (auto it = udp_sessions.begin(); it != udp_sessions.end(); ++it)
-                    if ((*it)->process(packet))
+                for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
+                    auto next = ++it;
+                    --it;
+                    if (it->expired())
+                        udp_sessions.erase(it);
+                    else if (it->lock()->process(packet)) {
+                        async_read_udp();
                         return;
-                auto session = make_shared<UDPSession>(&service, socks5_addr, socks5_port, packet, bind(&N2SInternal::gc, this), bind(&N2SInternal::async_read_udp, this), bind(&N2T::udp_send, &n2t, placeholders::_1));
-                udp_sessions.push_back(session);
+                    }
+                    it = next;
+                }
+                auto session = make_shared<UDPSession>(&service, socks5_addr, socks5_port, packet, bind(&N2T::udp_send, &n2t, placeholders::_1));
+                udp_sessions.push_back(weak_ptr<UDPSession>(session));
                 session->start();
+                async_read_udp();
             });
-        }
-
-        void gc()
-        {
-            for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
-                auto next = ++it;
-                --it;
-                if (it->use_count() == 1)
-                    udp_sessions.erase(it);
-                it = next;
-            }
         }
     };
 

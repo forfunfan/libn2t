@@ -28,13 +28,11 @@
 namespace Net2Tr{
     class UDPPacket;
 
-    typedef std::function<void()> GarbageCollector;
-    typedef std::function<void()> AsyncReadUDP;
     typedef std::function<void(const UDPPacket &packet)> WriteUDP;
 
     class UDPSession : public std::enable_shared_from_this<UDPSession> {
     public:
-        UDPSession(void *service, const std::string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, GarbageCollector gc, AsyncReadUDP async_read_udp, WriteUDP write_udp);
+        UDPSession(void *service, const std::string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp);
         ~UDPSession();
         void start();
         bool process(const UDPPacket &packet);
