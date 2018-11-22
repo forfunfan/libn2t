@@ -18,6 +18,7 @@
  */
 
 #include "udpsession.h"
+#include <list>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ip/udp.hpp>
@@ -45,6 +46,7 @@ namespace Net2Tr{
         char recv_buf[8192];
         steady_timer gc_timer;
         UDPPacket initial_packet;
+        list<UDPPacket> send_que;
         WriteUDP in_write;
 
         UDPSessionInternal(UDPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp) : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service), tcp_sock(service), gc_timer(service), initial_packet(initial_packet), in_write(write_udp) {}
@@ -90,32 +92,47 @@ namespace Net2Tr{
 
         void in_recv(const UDPPacket &packet)
         {
-            puts(packet.data.c_str());
+            if (status == FORWARD) {
+                string data("\x00\x00\x00", 3);
+                data += Utils::addrport_to_socks5(packet.dst_addr, packet.dst_port);
+                data += packet.data;
+                out_sock.send(buffer(data));
+            } else {
+                send_que.push_back(packet);
+            }
         }
 
         void tcp_recv(const string &data)
         {
             switch (status) {
-                case HANDSHAKE: {
+                case HANDSHAKE:
                     if (data != string("\x05\x00", 2)) {
                         destroy();
                         return;
                     }
                     status = REQUEST;
-                    string req("\x05\x03\x00\x01\x00\x00\x00\x00\x00\x00", 10);
-                    tcp_async_write(req);
+                    tcp_async_write(string("\x05\x03\x00\x01\x00\x00\x00\x00\x00\x00", 10));
                     break;
-                }
-                case REQUEST:
+                case REQUEST: {
                     if (data.size() <= 3 || data.substr(0, 3) != string("\x05\x00\x00", 3)) {
                         destroy();
                         return;
                     }
+                    string addr;
+                    uint16_t port;
+                    if (Utils::socks5_to_addrport(data.substr(3), addr, port) == -1) {
+                        destroy();
+                        return;
+                    }
+                    out_sock.connect(udp::endpoint(address::from_string(addr), port));
                     status = FORWARD;
                     tcp_async_read();
-                    //
+                    out_async_read();
                     in_recv(initial_packet);
+                    for (auto it = send_que.begin(); it != send_que.end(); ++it)
+                        in_recv(*it);
                     break;
+                }
                 case FORWARD:
                     destroy();
                     break;
@@ -136,7 +153,27 @@ namespace Net2Tr{
 
         void out_recv(const string &data)
         {
-
+            if (status == FORWARD) {
+                if (data.size() <= 3 && data.substr(0, 3) != string("\x00\x00\x00", 3)) {
+                    destroy();
+                    return;
+                }
+                string addr;
+                uint16_t port;
+                int res = Utils::socks5_to_addrport(data.substr(3), addr, port);
+                if (res == -1) {
+                    destroy();
+                    return;
+                }
+                UDPPacket packet;
+                packet.src_addr = addr;
+                packet.src_port = port;
+                packet.dst_addr = initial_packet.src_addr;
+                packet.dst_port = initial_packet.src_port;
+                packet.data = data.substr(res + 3);
+                in_write(packet);
+                out_async_read();
+            }
         }
 
         void destroy()

@@ -65,10 +65,12 @@ namespace Net2Tr {
             if (err == ERR_OK) {
                 SocketInternal *internal = (SocketInternal *) arg;
                 string packet = Utils::pbuf_to_str(p);
-                if (packet.size() == 0)
+                if (packet.size() == 0) {
                     internal->end = true;
-                else
+                } else {
+                    tcp_recved(internal->pcb, packet.size());
                     pbuf_free(p);
+                }
                 if (internal->recv) {
                     RecvHandler tmp = internal->recv;
                     internal->recv = RecvHandler();

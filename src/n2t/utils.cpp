@@ -64,4 +64,34 @@ namespace Net2Tr {
         ret += char(uint8_t(port & 0xFF));
         return ret;
     }
+
+    int Utils::socks5_to_addrport(const std::string &socks5, std::string &addr, uint16_t &port)
+    {
+        if (socks5.size() == 0)
+            return -1;
+        if (socks5[0] == 1) {
+            if (socks5.size() < 7)
+                return -1;
+            addr = to_string(uint8_t(socks5[1])) + '.' +
+                   to_string(uint8_t(socks5[2])) + '.' +
+                   to_string(uint8_t(socks5[3])) + '.' +
+                   to_string(uint8_t(socks5[4]));
+            port = (uint8_t(socks5[5]) << 8) | uint8_t(socks5[6]);
+            return 7;
+        } else if (socks5[0] == 4) {
+            if (socks5.size() < 19)
+                return -1;
+            char t[40];
+            sprintf(t, "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                    uint8_t(socks5[1]), uint8_t(socks5[2]), uint8_t(socks5[3]), uint8_t(socks5[4]),
+                    uint8_t(socks5[5]), uint8_t(socks5[6]), uint8_t(socks5[7]), uint8_t(socks5[8]),
+                    uint8_t(socks5[9]), uint8_t(socks5[10]), uint8_t(socks5[11]), uint8_t(socks5[12]),
+                    uint8_t(socks5[13]), uint8_t(socks5[14]), uint8_t(socks5[15]), uint8_t(socks5[16]));
+            addr = t;
+            port = (uint8_t(socks5[17]) << 8) | uint8_t(socks5[18]);
+            return 19;
+        } else {
+            return -1;
+        }
+    }
 }
