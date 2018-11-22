@@ -51,6 +51,20 @@ namespace Net2Tr{
 
         UDPSessionInternal(UDPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp) : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service), tcp_sock(service), gc_timer(service), initial_packet(initial_packet), in_write(write_udp) {}
 
+        void async_wait_timer()
+        {
+            gc_timer.expires_from_now(boost::asio::chrono::minutes(1));
+            auto self = session.shared_from_this();
+            gc_timer.async_wait([this, self](const boost::system::error_code &error)
+            {
+                if (error) {
+                    async_wait_timer();
+                    return;
+                }
+                destroy();
+            });
+        }
+
         void tcp_async_read()
         {
             auto self = session.shared_from_this();
@@ -92,6 +106,7 @@ namespace Net2Tr{
 
         void in_recv(const UDPPacket &packet)
         {
+            gc_timer.cancel();
             if (status == FORWARD) {
                 string data("\x00\x00\x00", 3);
                 data += Utils::addrport_to_socks5(packet.dst_addr, packet.dst_port);
@@ -153,6 +168,7 @@ namespace Net2Tr{
 
         void out_recv(const string &data)
         {
+            gc_timer.cancel();
             if (status == FORWARD) {
                 if (data.size() <= 3 && data.substr(0, 3) != string("\x00\x00\x00", 3)) {
                     destroy();
@@ -191,6 +207,7 @@ namespace Net2Tr{
                 out_sock.cancel(ec);
                 out_sock.close(ec);
             }
+            gc_timer.cancel(ec);
         }
     };
 
@@ -206,6 +223,7 @@ namespace Net2Tr{
 
     void UDPSession::start()
     {
+        internal->async_wait_timer();
         auto self = shared_from_this();
         internal->tcp_sock.async_connect(tcp::endpoint(address::from_string(internal->socks5_addr), internal->socks5_port), [this, self](const boost::system::error_code &error)
         {
