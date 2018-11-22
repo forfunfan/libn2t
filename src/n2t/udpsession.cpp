@@ -90,17 +90,48 @@ namespace Net2Tr{
 
         void in_recv(const UDPPacket &packet)
         {
-
+            puts(packet.data.c_str());
         }
 
         void tcp_recv(const string &data)
         {
-
+            switch (status) {
+                case HANDSHAKE: {
+                    if (data != string("\x05\x00", 2)) {
+                        destroy();
+                        return;
+                    }
+                    status = REQUEST;
+                    string req("\x05\x03\x00\x01\x00\x00\x00\x00\x00\x00", 10);
+                    tcp_async_write(req);
+                    break;
+                }
+                case REQUEST:
+                    if (data.size() <= 3 || data.substr(0, 3) != string("\x05\x00\x00", 3)) {
+                        destroy();
+                        return;
+                    }
+                    status = FORWARD;
+                    tcp_async_read();
+                    //
+                    in_recv(initial_packet);
+                    break;
+                case FORWARD:
+                    destroy();
+                    break;
+                default: break;
+            }
         }
 
         void tcp_sent()
         {
-
+            switch (status) {
+                case HANDSHAKE:
+                case REQUEST:
+                    tcp_async_read();
+                    break;
+                default: break;
+            }
         }
 
         void out_recv(const string &data)
