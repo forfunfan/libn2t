@@ -72,7 +72,7 @@ namespace Net2Tr {
             auto self = session.shared_from_this();
             out_sock.async_read_some(buffer(recv_buf, sizeof(recv_buf)), [this, self](const boost::system::error_code &error, size_t length)
             {
-                if (error && error != boost::asio::error::operation_aborted) {
+                if (error) {
                     destroy();
                     return;
                 }

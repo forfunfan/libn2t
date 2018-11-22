@@ -51,17 +51,41 @@ namespace Net2Tr{
 
         void tcp_async_read()
         {
-
+            auto self = session.shared_from_this();
+            tcp_sock.async_read_some(buffer(recv_buf, sizeof(recv_buf)), [this, self](const boost::system::error_code &error, size_t length)
+            {
+                if (error) {
+                    destroy();
+                    return;
+                }
+                tcp_recv(string(recv_buf, length));
+            });
         }
 
         void tcp_async_write(const string &data)
         {
-
+            auto self = session.shared_from_this();
+            async_write(tcp_sock, buffer(data), [this, self](const boost::system::error_code &error, size_t)
+            {
+                if (error) {
+                    destroy();
+                    return;
+                }
+                tcp_sent();
+            });
         }
 
         void out_async_read()
         {
-
+            auto self = session.shared_from_this();
+            out_sock.async_receive(buffer(recv_buf, sizeof(recv_buf)), [this, self](const boost::system::error_code &error, size_t length)
+            {
+                if (error) {
+                    destroy();
+                    return;
+                }
+                out_recv(string(recv_buf, length));
+            });
         }
 
         void in_recv(const UDPPacket &packet)
@@ -86,7 +110,19 @@ namespace Net2Tr{
 
         void destroy()
         {
-
+            if (status == DESTROY)
+                return;
+            status = DESTROY;
+            boost::system::error_code ec;
+            if (tcp_sock.is_open()) {
+                tcp_sock.cancel(ec);
+                tcp_sock.shutdown(tcp::socket::shutdown_both, ec);
+                tcp_sock.close(ec);
+            }
+            if (out_sock.is_open()) {
+                out_sock.cancel(ec);
+                out_sock.close(ec);
+            }
         }
     };
 
