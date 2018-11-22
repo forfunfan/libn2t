@@ -93,9 +93,9 @@ namespace Net2Tr {
                 for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
                     auto next = ++it;
                     --it;
-                    if (it->expired())
+                    if (it->expired()) {
                         udp_sessions.erase(it);
-                    else if (it->lock()->process(packet)) {
+                    } else if (it->lock()->process(packet)) {
                         async_read_udp();
                         return;
                     }
