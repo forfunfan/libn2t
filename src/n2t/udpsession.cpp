@@ -57,11 +57,8 @@ namespace Net2Tr{
             auto self = session.shared_from_this();
             gc_timer.async_wait([this, self](const boost::system::error_code &error)
             {
-                if (error) {
-                    async_wait_timer();
-                    return;
-                }
-                destroy();
+                if (!error)
+                    destroy();
             });
         }
 
@@ -107,6 +104,7 @@ namespace Net2Tr{
         void in_recv(const UDPPacket &packet)
         {
             gc_timer.cancel();
+            async_wait_timer();
             if (status == FORWARD) {
                 string data("\x00\x00\x00", 3);
                 data += Utils::addrport_to_socks5(packet.dst_addr, packet.dst_port);
@@ -169,6 +167,7 @@ namespace Net2Tr{
         void out_recv(const string &data)
         {
             gc_timer.cancel();
+            async_wait_timer();
             if (status == FORWARD) {
                 if (data.size() <= 3 && data.substr(0, 3) != string("\x00\x00\x00", 3)) {
                     destroy();
