@@ -49,7 +49,6 @@ namespace Net2Tr {
             tcp_recv(internal->pcb, NULL);
             tcp_sent(internal->pcb, NULL);
             tcp_err(internal->pcb, NULL);
-            tcp_shutdown(internal->pcb, 0, 1);
             tcp_close(internal->pcb);
         }
         delete internal;
