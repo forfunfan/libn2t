@@ -34,8 +34,9 @@ namespace Net2Tr {
         std::string recv_buf;
         queue<err_t> err_que;
         bool end;
+        bool erred;
 
-        SocketInternal() : pcb(NULL), pending_len(0), end(false) {}
+        SocketInternal() : pcb(NULL), pending_len(0), end(false), erred(false) {}
     };
 
     Socket::Socket()
@@ -45,7 +46,7 @@ namespace Net2Tr {
 
     Socket::~Socket()
     {
-        if (internal->pcb != NULL) {
+        if (internal->pcb != NULL && !internal->erred) {
             tcp_recv(internal->pcb, NULL);
             tcp_sent(internal->pcb, NULL);
             tcp_err(internal->pcb, NULL);
@@ -94,6 +95,7 @@ namespace Net2Tr {
         tcp_err(internal->pcb, [](void *arg, err_t err)
         {
             SocketInternal *internal = (SocketInternal *) arg;
+            internal->erred = true;
             if (internal->err) {
                 ErrHandler tmp = internal->err;
                 internal->err = ErrHandler();
