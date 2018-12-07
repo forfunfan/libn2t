@@ -31,6 +31,7 @@ namespace Net2Tr {
         N2S(int tun_fd, N2T &n2t, const std::string &socks5_addr, uint16_t socks5_port);
         ~N2S();
         void start();
+        void stop();
     private:
         class N2SInternal;
         N2SInternal *internal;

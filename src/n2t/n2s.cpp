@@ -128,4 +128,9 @@ namespace Net2Tr {
         internal->async_read_udp();
         internal->service.run();
     }
+
+    void N2S::stop()
+    {
+        internal->service.stop();
+    }
 }
