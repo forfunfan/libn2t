@@ -94,4 +94,11 @@ namespace Net2Tr {
             return -1;
         }
     }
+
+    void Utils::log(const char *file, const char *func, int line, const std::string &msg) {
+#if defined(ANDROID) || defined(__ANDROID__)
+        __android_log_print(ANDROID_LOG_ERROR, "libn2t", "%s:%d %s(): %s\n",
+                            file, line, func, msg.c_str());
+#endif
+    }
 }
