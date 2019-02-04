@@ -68,7 +68,7 @@ namespace Net2Tr {
                 if (packet.size() == 0) {
                     internal->end = true;
                 } else {
-                    tcp_recved(internal->pcb, packet.size());
+                    tcp_recved(internal->pcb, u16_t(packet.size()));
                     pbuf_free(p);
                 }
                 if (internal->recv) {
@@ -121,7 +121,7 @@ namespace Net2Tr {
     {
         internal->pending_len += packet.size();
         internal->sent = handler;
-        tcp_write(internal->pcb, packet.c_str(), packet.size(), TCP_WRITE_FLAG_COPY);
+        tcp_write(internal->pcb, packet.c_str(), u16_t(packet.size()), TCP_WRITE_FLAG_COPY);
         tcp_output(internal->pcb);
     }
 

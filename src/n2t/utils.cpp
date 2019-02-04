@@ -27,10 +27,10 @@ using namespace boost::asio::ip;
 namespace Net2Tr {
     pbuf *Utils::str_to_pbuf(const string &str)
     {
-        pbuf *p = pbuf_alloc(PBUF_RAW, str.size(), PBUF_POOL);
+        pbuf *p = pbuf_alloc(PBUF_RAW, u16_t(str.size()), PBUF_POOL);
         if (p == NULL)
             return NULL;
-        pbuf_take(p, str.c_str(), str.size());
+        pbuf_take(p, str.c_str(), u16_t(str.size()));
         return p;
     }
 
