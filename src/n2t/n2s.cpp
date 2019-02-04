@@ -17,15 +17,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "n2s.h"
 #include <memory>
 #include <list>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
+
+#include "n2s.h"
 #include "n2t.h"
 #include "tcpsession.h"
 #include "udpsession.h"
+
 using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::posix;
@@ -60,8 +62,13 @@ namespace Net2Tr {
             {
                 if (!error) {
                     char buf[2000];
-                    int len = read(fd.native_handle(), buf, sizeof(buf));
-                    n2t.input(string(buf, len));
+                    ssize_t len = read(fd.native_handle(), buf, sizeof(buf));
+                    if (len > 0) {
+                        n2t.input(string(buf, size_t(len)));
+                    } else {
+                        shutdown(fd.native_handle(), SHUT_RDWR);
+                        close(fd.native_handle());
+                    }
                 }
                 async_read_fd();
             });
