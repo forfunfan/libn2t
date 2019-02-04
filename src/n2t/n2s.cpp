@@ -27,6 +27,7 @@
 #include "n2t.h"
 #include "tcpsession.h"
 #include "udpsession.h"
+#include "utils.h"
 
 using namespace std;
 using namespace boost::asio;

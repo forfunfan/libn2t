@@ -68,6 +68,7 @@ namespace Net2Tr{
             tcp_sock.async_read_some(buffer(recv_buf, sizeof(recv_buf)), [this, self](const boost::system::error_code &error, size_t length)
             {
                 if (error) {
+                    N2T_LOG(error);
                     destroy();
                     return;
                 }
@@ -81,6 +82,7 @@ namespace Net2Tr{
             async_write(tcp_sock, buffer(data), [this, self](const boost::system::error_code &error, size_t)
             {
                 if (error) {
+                    N2T_LOG(error);
                     destroy();
                     return;
                 }
@@ -94,6 +96,7 @@ namespace Net2Tr{
             out_sock.async_receive(buffer(recv_buf, sizeof(recv_buf)), [this, self](const boost::system::error_code &error, size_t length)
             {
                 if (error) {
+                    N2T_LOG(error);
                     destroy();
                     return;
                 }
@@ -140,6 +143,7 @@ namespace Net2Tr{
                     }
                     out_sock.connect(udp::endpoint(address::from_string(addr), port), error);
                     if (error) {
+                        N2T_LOG(error);
                         destroy();
                         return;
                     }
@@ -232,6 +236,7 @@ namespace Net2Tr{
         internal->tcp_sock.async_connect(tcp::endpoint(address::from_string(internal->socks5_addr), internal->socks5_port), [this, self](const boost::system::error_code &error)
         {
             if (error) {
+                N2T_LOG(error);
                 internal->destroy();
                 return;
             }

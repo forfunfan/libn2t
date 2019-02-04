@@ -17,12 +17,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tcpsession.h"
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
+
+#include "tcpsession.h"
 #include "socket.h"
 #include "utils.h"
+
 using namespace std;
 using namespace boost::asio;
 using namespace boost::asio::ip;
@@ -73,6 +75,7 @@ namespace Net2Tr {
             out_sock.async_read_some(buffer(recv_buf, sizeof(recv_buf)), [this, self](const boost::system::error_code &error, size_t length)
             {
                 if (error) {
+                    N2T_LOG(error);
                     destroy();
                     return;
                 }
@@ -86,6 +89,7 @@ namespace Net2Tr {
             async_write(out_sock, buffer(data), [this, self](const boost::system::error_code &error, size_t)
             {
                 if (error) {
+                    N2T_LOG(error);
                     destroy();
                     return;
                 }
@@ -189,6 +193,7 @@ namespace Net2Tr {
         internal->out_sock.async_connect(tcp::endpoint(address::from_string(internal->socks5_addr), internal->socks5_port), [this, self](const boost::system::error_code &error)
         {
             if (error) {
+                N2T_LOG(error);
                 internal->destroy();
                 return;
             }
