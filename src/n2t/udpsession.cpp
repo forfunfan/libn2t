@@ -117,6 +117,7 @@ namespace Net2Tr{
 
         void tcp_recv(const string &data)
         {
+            boost::system::error_code error;
             switch (status) {
                 case HANDSHAKE:
                     if (data != string("\x05\x00", 2)) {
@@ -137,7 +138,11 @@ namespace Net2Tr{
                         destroy();
                         return;
                     }
-                    out_sock.connect(udp::endpoint(address::from_string(addr), port));
+                    out_sock.connect(udp::endpoint(address::from_string(addr), port), error);
+                    if (error) {
+                        destroy();
+                        return;
+                    }
                     status = FORWARD;
                     tcp_async_read();
                     out_async_read();
