@@ -48,6 +48,17 @@ namespace Net2Tr {
         {
             init();
         }
+        ~N2TInternal() {
+            if (upcb != NULL) {
+                udp_remove(upcb);
+                upcb = NULL;
+            }
+            if (listen_pcb != NULL) {
+                tcp_close(listen_pcb);
+                listen_pcb = NULL;
+            }
+            netif_remove(&ni);
+        }
 
         static void init()
         {
@@ -151,10 +162,10 @@ namespace Net2Tr {
 
     N2T::~N2T()
     {
-        udp_remove(internal->upcb);
-        tcp_close(internal->listen_pcb);
-        netif_remove(&internal->ni);
-        delete internal;
+        if (internal != NULL) {
+            delete internal;
+            internal = NULL;
+        }
     }
 
     void N2T::input(const string &packet)

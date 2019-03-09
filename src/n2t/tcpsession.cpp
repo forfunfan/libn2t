@@ -45,8 +45,12 @@ namespace Net2Tr {
         tcp::socket out_sock;
         char recv_buf[8192];
 
-        TCPSessionInternal(TCPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port) : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service) {}
+        TCPSessionInternal(TCPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port)
+        : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service) {}
 
+        ~TCPSessionInternal() {
+            destroy();
+        }
         void in_async_read()
         {
             auto self = session.shared_from_this();
@@ -175,7 +179,10 @@ namespace Net2Tr {
 
     TCPSession::~TCPSession()
     {
-        delete internal;
+        if (internal != NULL) {
+            delete internal;
+            internal = NULL;
+        }
     }
 
     Socket *TCPSession::socket()

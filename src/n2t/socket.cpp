@@ -37,6 +37,20 @@ namespace Net2Tr {
         bool erred;
 
         SocketInternal() : pcb(NULL), pending_len(0), end(false), erred(false) {}
+        ~SocketInternal() {
+            if (pcb != NULL) {
+                // unregister callbacks
+                tcp_recv(pcb, NULL);
+                tcp_sent(pcb, NULL);
+                tcp_err(pcb, NULL);
+                // lwip tcp_err_fn: The corresponding pcb is already freed when this callback is called!
+                if (!erred) {
+                    tcp_close(pcb);
+                }
+
+                pcb = NULL;
+            }
+        }
     };
 
     Socket::Socket()
@@ -46,13 +60,10 @@ namespace Net2Tr {
 
     Socket::~Socket()
     {
-        if (internal->pcb != NULL && !internal->erred) {
-            tcp_recv(internal->pcb, NULL);
-            tcp_sent(internal->pcb, NULL);
-            tcp_err(internal->pcb, NULL);
-            tcp_close(internal->pcb);
+        if (internal != NULL) {
+            delete internal;
+            internal = NULL;
         }
-        delete internal;
     }
 
     void Socket::set_pcb(tcp_pcb *pcb)
@@ -138,6 +149,12 @@ namespace Net2Tr {
 
     void Socket::cancel()
     {
+        if (internal->pcb != NULL) {
+            // unregister callbacks
+            tcp_recv(internal->pcb, NULL);
+            tcp_sent(internal->pcb, NULL);
+            tcp_err(internal->pcb, NULL);
+        }
         internal->recv = RecvHandler();
         internal->sent = SentHandler();
         internal->err = ErrHandler();

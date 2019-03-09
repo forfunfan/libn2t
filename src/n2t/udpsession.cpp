@@ -49,7 +49,12 @@ namespace Net2Tr{
         list<UDPPacket> send_que;
         WriteUDP in_write;
 
-        UDPSessionInternal(UDPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp) : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service), tcp_sock(service), gc_timer(service), initial_packet(initial_packet), in_write(write_udp) {}
+        UDPSessionInternal(UDPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp)
+        : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port),
+        out_sock(service), tcp_sock(service), gc_timer(service), initial_packet(initial_packet), in_write(write_udp) {}
+        ~UDPSessionInternal() {
+            destroy();
+        }
 
         void async_wait_timer()
         {
@@ -226,7 +231,10 @@ namespace Net2Tr{
 
     UDPSession::~UDPSession()
     {
-        delete internal;
+        if (internal != NULL) {
+            delete internal;
+            internal = NULL;
+        }
     }
 
     void UDPSession::start()
