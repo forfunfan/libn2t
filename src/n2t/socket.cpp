@@ -44,7 +44,9 @@ namespace Net2Tr {
                 tcp_recv(pcb, NULL);
                 tcp_sent(pcb, NULL);
                 tcp_err(pcb, NULL);
-                tcp_close(pcb);
+                if (ERR_OK != tcp_close(pcb)) {
+                    tcp_abort(pcb);
+                }
 
                 pcb = NULL;
             }

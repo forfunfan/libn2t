@@ -54,7 +54,9 @@ namespace Net2Tr {
                 upcb = NULL;
             }
             if (listen_pcb != NULL) {
-                tcp_close(listen_pcb);
+                if (ERR_OK != tcp_close(listen_pcb)) {
+                    tcp_abort(listen_pcb);
+                }
                 listen_pcb = NULL;
             }
             netif_remove(&ni);
