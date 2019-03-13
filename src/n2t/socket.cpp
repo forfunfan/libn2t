@@ -93,7 +93,7 @@ namespace Net2Tr {
                 if (internal->recv) {
                     RecvHandler tmp = internal->recv;
                     internal->recv = RecvHandler();
-                    tmp(packet);
+                    tmp(internal->pcb_freed, packet);
                 } else {
                     internal->recv_buf += packet;
                 }
@@ -109,7 +109,7 @@ namespace Net2Tr {
             if (internal->pending_len == 0) {
                 SentHandler tmp = internal->sent;
                 internal->sent = SentHandler();
-                tmp();
+                tmp(internal->pcb_freed);
             }
             return ERR_OK;
         });
@@ -129,17 +129,25 @@ namespace Net2Tr {
 
     void Socket::async_recv(const RecvHandler &handler)
     {
-        if (internal->recv_buf.size() == 0 && !internal->pcb_freed) {
+        if (internal->pcb_freed) {
+            handler(internal->pcb_freed, string());
+            return;
+        }
+        if (internal->recv_buf.size() == 0) {
             internal->recv = handler;
         } else {
             string tmp = internal->recv_buf;
             internal->recv_buf.clear();
-            handler(tmp);
+            handler(internal->pcb_freed, tmp);
         }
     }
 
     void Socket::async_send(const string &packet, const SentHandler &handler)
     {
+        if (internal->pcb_freed) {
+            handler(internal->pcb_freed);
+            return;
+        }
         internal->pending_len += packet.size();
         internal->sent = handler;
         tcp_write(internal->pcb, packet.c_str(), u16_t(packet.size()), TCP_WRITE_FLAG_COPY);

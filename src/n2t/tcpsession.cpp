@@ -54,9 +54,9 @@ namespace Net2Tr {
         void in_async_read()
         {
             auto self = session.shared_from_this();
-            in_sock.async_recv([this, self](const string &packet)
+            in_sock.async_recv([this, self](bool pcb_freed, const string &packet)
             {
-                if (packet.size() == 0) {
+                if (pcb_freed) {
                     destroy();
                     return;
                 }
@@ -67,8 +67,12 @@ namespace Net2Tr {
         void in_async_write(const string &data)
         {
             auto self = session.shared_from_this();
-            in_sock.async_send(data, [this, self]()
+            in_sock.async_send(data, [this, self](bool pcb_freed)
             {
+                if (pcb_freed) {
+                    destroy();
+                    return;
+                }
                 in_sent();
             });
         }
