@@ -38,15 +38,13 @@ namespace Net2Tr {
 
         SocketInternal() : pcb(NULL), pending_len(0), end(false), erred(false) {}
         ~SocketInternal() {
-            if (pcb != NULL) {
+            if (pcb != NULL && !erred) {
+                // lwip tcp_err_fn: The corresponding pcb is already freed when this callback is called!
                 // unregister callbacks
                 tcp_recv(pcb, NULL);
                 tcp_sent(pcb, NULL);
                 tcp_err(pcb, NULL);
-                // lwip tcp_err_fn: The corresponding pcb is already freed when this callback is called!
-                if (!erred) {
-                    tcp_close(pcb);
-                }
+                tcp_close(pcb);
 
                 pcb = NULL;
             }
