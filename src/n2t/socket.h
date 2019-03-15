@@ -27,8 +27,8 @@
 struct tcp_pcb;
 
 namespace Net2Tr {
-    typedef std::function<void(const std::string &packet)> RecvHandler;
-    typedef std::function<void()> SentHandler;
+    typedef std::function<void(bool pcb_freed, const std::string &packet)> RecvHandler;
+    typedef std::function<void(bool pcb_freed)> SentHandler;
     typedef std::function<void(int8_t err)> ErrHandler;
 
     class Socket {

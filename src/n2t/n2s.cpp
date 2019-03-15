@@ -37,17 +37,22 @@ namespace Net2Tr {
     class N2S::N2SInternal {
     public:
         io_service service;
-        stream_descriptor fd;
+        stream_descriptor tun_stream_descriptor;
         N2T &n2t;
         string socks5_addr;
         uint16_t socks5_port;
         steady_timer lwip_timer;
         list<weak_ptr<UDPSession> > udp_sessions;
+        bool stopped;
 
-        N2SInternal(int tun_fd, N2T &n2t, const string &socks5_addr, uint16_t socks5_port) : fd(service, tun_fd), n2t(n2t), socks5_addr(socks5_addr), socks5_port(socks5_port), lwip_timer(service) {}
+        N2SInternal(int tun_fd, N2T &n2t, const string &socks5_addr, uint16_t socks5_port)
+        : tun_stream_descriptor(service, tun_fd), n2t(n2t), socks5_addr(socks5_addr),
+        socks5_port(socks5_port), lwip_timer(service), stopped(false)
+        {}
 
         void async_wait_timer()
         {
+            if (stopped) return;
             lwip_timer.expires_from_now(boost::asio::chrono::milliseconds(250));
             lwip_timer.async_wait([this](const boost::system::error_code &error)
             {
@@ -59,16 +64,17 @@ namespace Net2Tr {
 
         void async_read_fd()
         {
-            fd.async_wait(stream_descriptor::wait_read, [this](const boost::system::error_code &error)
+            if (stopped) return;
+            tun_stream_descriptor.async_wait(stream_descriptor::wait_read, [this](const boost::system::error_code &error)
             {
                 if (!error) {
-                    char buf[2000];
-                    ssize_t len = read(fd.native_handle(), buf, sizeof(buf));
+                    char buf[2048];
+                    ssize_t len = read(tun_stream_descriptor.native_handle(), buf, sizeof(buf));
                     if (len > 0) {
                         n2t.input(string(buf, size_t(len)));
                     } else {
-                        shutdown(fd.native_handle(), SHUT_RDWR);
-                        close(fd.native_handle());
+                        // In general, tun fd remains valid
+                        Utils::log(__FILE__, __func__, __LINE__, "Failed to read tun fd: " + to_string(len));
                     }
                 }
                 async_read_fd();
@@ -77,15 +83,17 @@ namespace Net2Tr {
 
         void async_output()
         {
+            if (stopped) return;
             n2t.async_output([this](const string &packet)
             {
-                write(fd.native_handle(), packet.c_str(), packet.size());
+                write(tun_stream_descriptor.native_handle(), packet.c_str(), packet.size());
                 async_output();
             });
         }
 
         void async_accept()
         {
+            if (stopped) return;
             auto session = make_shared<TCPSession>(&service, socks5_addr, socks5_port);
             n2t.async_accept(session->socket(), [this, session]()
             {
@@ -96,6 +104,7 @@ namespace Net2Tr {
 
         void async_read_udp()
         {
+            if (stopped) return;
             n2t.async_udp_recv([this](const UDPPacket &packet)
             {
                 for (auto it = udp_sessions.begin(); it != udp_sessions.end();) {
@@ -129,6 +138,7 @@ namespace Net2Tr {
 
     void N2S::start()
     {
+        internal->stopped = false;
         internal->async_wait_timer();
         internal->async_read_fd();
         internal->async_output();
@@ -139,6 +149,7 @@ namespace Net2Tr {
 
     void N2S::stop()
     {
+        internal->stopped = true;
         internal->service.stop();
     }
 }
