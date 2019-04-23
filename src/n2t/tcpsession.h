@@ -29,7 +29,7 @@ namespace Net2Tr {
 
     class TCPSession : public std::enable_shared_from_this<TCPSession> {
     public:
-        TCPSession(void *service, const std::string &socks5_addr, uint16_t socks5_port);
+        TCPSession(void *context, const std::string &socks5_addr, uint16_t socks5_port);
         ~TCPSession();
         Socket *socket();
         void start();

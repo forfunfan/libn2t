@@ -32,7 +32,7 @@ namespace Net2Tr{
 
     class UDPSession : public std::enable_shared_from_this<UDPSession> {
     public:
-        UDPSession(void *service, const std::string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp);
+        UDPSession(void *context, const std::string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp);
         ~UDPSession();
         void start();
         bool process(const UDPPacket &packet);

@@ -19,7 +19,7 @@
 
 #include <memory>
 #include <list>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 
@@ -36,7 +36,7 @@ using namespace boost::asio::posix;
 namespace Net2Tr {
     class N2S::N2SInternal {
     public:
-        io_service service;
+        io_context context;
         stream_descriptor tun_stream_descriptor;
         N2T &n2t;
         string socks5_addr;
@@ -46,14 +46,14 @@ namespace Net2Tr {
         bool stopped;
 
         N2SInternal(int tun_fd, N2T &n2t, const string &socks5_addr, uint16_t socks5_port)
-        : tun_stream_descriptor(service, tun_fd), n2t(n2t), socks5_addr(socks5_addr),
-        socks5_port(socks5_port), lwip_timer(service), stopped(false)
+        : tun_stream_descriptor(context, tun_fd), n2t(n2t), socks5_addr(socks5_addr),
+        socks5_port(socks5_port), lwip_timer(context), stopped(false)
         {}
 
         void async_wait_timer()
         {
             if (stopped) return;
-            lwip_timer.expires_from_now(boost::asio::chrono::milliseconds(250));
+            lwip_timer.expires_after(boost::asio::chrono::milliseconds(250));
             lwip_timer.async_wait([this](const boost::system::error_code &error)
             {
                 if (!error)
@@ -94,7 +94,7 @@ namespace Net2Tr {
         void async_accept()
         {
             if (stopped) return;
-            auto session = make_shared<TCPSession>(&service, socks5_addr, socks5_port);
+            auto session = make_shared<TCPSession>(&context, socks5_addr, socks5_port);
             n2t.async_accept(session->socket(), [this, session]()
             {
                 session->start();
@@ -118,7 +118,7 @@ namespace Net2Tr {
                     }
                     it = next;
                 }
-                auto session = make_shared<UDPSession>(&service, socks5_addr, socks5_port, packet, bind(&N2T::udp_send, &n2t, placeholders::_1));
+                auto session = make_shared<UDPSession>(&context, socks5_addr, socks5_port, packet, bind(&N2T::udp_send, &n2t, placeholders::_1));
                 udp_sessions.push_back(weak_ptr<UDPSession>(session));
                 session->start();
                 async_read_udp();
@@ -144,12 +144,13 @@ namespace Net2Tr {
         internal->async_output();
         internal->async_accept();
         internal->async_read_udp();
-        internal->service.run();
+        internal->context.run();
     }
 
     void N2S::stop()
     {
         internal->stopped = true;
-        internal->service.stop();
+        internal->lwip_timer.cancel();
+        internal->context.stop();
     }
 }

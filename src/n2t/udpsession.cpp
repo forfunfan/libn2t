@@ -19,7 +19,7 @@
 
 #include "udpsession.h"
 #include <list>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include <boost/asio/write.hpp>
@@ -49,16 +49,16 @@ namespace Net2Tr{
         list<UDPPacket> send_que;
         WriteUDP in_write;
 
-        UDPSessionInternal(UDPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp)
+        UDPSessionInternal(UDPSession &session, io_context &context, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp)
         : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port),
-        out_sock(service), tcp_sock(service), gc_timer(service), initial_packet(initial_packet), in_write(write_udp) {}
+        out_sock(context), tcp_sock(context), gc_timer(context), initial_packet(initial_packet), in_write(write_udp) {}
         ~UDPSessionInternal() {
             destroy();
         }
 
         void async_wait_timer()
         {
-            gc_timer.expires_from_now(boost::asio::chrono::minutes(1));
+            gc_timer.expires_after(boost::asio::chrono::minutes(1));
             auto self = session.shared_from_this();
             gc_timer.async_wait([this, self](const boost::system::error_code &error)
             {
@@ -220,13 +220,13 @@ namespace Net2Tr{
                 out_sock.cancel(ec);
                 out_sock.close(ec);
             }
-            gc_timer.cancel(ec);
+            gc_timer.cancel();
         }
     };
 
-    UDPSession::UDPSession(void *service, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp)
+    UDPSession::UDPSession(void *context, const string &socks5_addr, uint16_t socks5_port, const UDPPacket &initial_packet, WriteUDP write_udp)
     {
-        internal = new UDPSessionInternal(*this, *(io_service *) service, socks5_addr, socks5_port, initial_packet, write_udp);
+        internal = new UDPSessionInternal(*this, *(io_context *) context, socks5_addr, socks5_port, initial_packet, write_udp);
     }
 
     UDPSession::~UDPSession()

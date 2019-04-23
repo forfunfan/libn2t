@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
@@ -45,8 +45,8 @@ namespace Net2Tr {
         tcp::socket out_sock;
         char recv_buf[8192];
 
-        TCPSessionInternal(TCPSession &session, io_service &service, const string &socks5_addr, uint16_t socks5_port)
-        : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(service) {}
+        TCPSessionInternal(TCPSession &session, io_context &context, const string &socks5_addr, uint16_t socks5_port)
+        : status(HANDSHAKE), session(session), socks5_addr(socks5_addr), socks5_port(socks5_port), out_sock(context) {}
 
         ~TCPSessionInternal() {
             destroy();
@@ -176,9 +176,9 @@ namespace Net2Tr {
         }
     };
 
-    TCPSession::TCPSession(void *service, const string &socks5_addr, uint16_t socks5_port)
+    TCPSession::TCPSession(void *context, const string &socks5_addr, uint16_t socks5_port)
     {
-        internal = new TCPSessionInternal(*this, *(io_service *) service, socks5_addr, socks5_port);
+        internal = new TCPSessionInternal(*this, *(io_context *) context, socks5_addr, socks5_port);
     }
 
     TCPSession::~TCPSession()
