@@ -94,7 +94,8 @@ namespace Net2Tr {
         void out_async_write(const string &data)
         {
             auto self = session.shared_from_this();
-            async_write(out_sock, buffer(data), [this, self](const boost::system::error_code &error, size_t)
+            auto data_copy = make_shared<string>(data);
+            async_write(out_sock, buffer(*data_copy), [this, self, data_copy](const boost::system::error_code &error, size_t)
             {
                 if (error) {
                     N2T_LOG(error);
